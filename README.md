@@ -28,7 +28,7 @@ This system was stress-tested using **K6** with the following parameters:
 *   **Framework:** NestJS (Node.js)
 *   **Database:** PostgreSQL
 *   **ORM:** TypeORM
-*   **Testing:** K6 (Load Testing), Jest (Unit Testing)
+*   **Testing:** K6 (Load Testing)
 
 ## How to Run Locally
 1. Clone this repository: `git clone ...`
