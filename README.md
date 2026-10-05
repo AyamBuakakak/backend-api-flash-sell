@@ -28,35 +28,44 @@ This system was stress-tested using **Grafana K6** with the following parameters
 ### K6 Metric Results:
 
 **50 VUs (Stable):**
+```text
 ✗ success (Status 201)         ↳  20% — ✓ 10 / ✗ 40
 ✗ out of stock (Status 400)    ↳  80% — ✓ 40 / ✗ 10
 
 http_req_duration: avg=385.68ms  p(95)=437.24ms
 http_req_failed..: 80.00% 40 out of 50
+```
 
-**50 VUs (Stable):**
+**100 VUs (Stable):**
+```text
 ✗ success (Status 201)         ↳  7% — ✓ 7 / ✗ 93
 ✗ out of stock (Status 400)    ↳  93% — ✓ 93 / ✗ 7
 
 http_req_duration: avg=315.67ms  p(95)=382.79ms
 http_req_failed..: 93.00% 93 out of 100
+```
 
-**50 VUs (Stable):**
+**500 VUs (Stable):**
+```text
 ✗ success (Status 201)         ↳  3% — ✓ 15 / ✗ 485
 ✗ out of stock (Status 400)    ↳  51% — ✓ 259 / ✗ 241
 
 http_req_duration: avg=324.24ms  p(95)=767.9ms 
 http_req_failed..: 97.00% 485 out of 500
+```
 
-**50 VUs (Stable):**
+**1000 VUs (Stable):**
+```text
 ✗ success (Status 201)         ↳  11% — ✓ 118 / ✗ 882
 ✗ out of stock (Status 400)    ↳  18% — ✓ 185 / ✗ 815
 
 http_req_duration: avg=330.65ms  p(95)=1.34s
 http_req_failed..: 88.20% 882 out of 1000
+```
 
 ### Testing Result:
 * **Unit Test:**
+```text
 ✓ src/modules/module-catalog/order/flash-sale.service.spec.ts (5 tests)
    ✓ FlashSaleService (Vitest)
      ✓ must be defined
@@ -69,20 +78,21 @@ http_req_failed..: 88.20% 882 out of 1000
  Test Files  1 passed (1)
       Tests  5 passed (5)
    Duration  1.52s
+```
 
 * **e2e Test:**
     * **Failed Result:**
-    Status E2E: 201 {
-    id: '85f592f3-4d0b-4e50-9b50-80e08f1f3a1b',
-    userId: '123e4567-e89b-12d3-a456-426614174000',
-    totalPrice: 15000000,
-    status: 'SUCCESS',
-    items: [ ... ],
-    createdAt: '2026-10-05T04:22:19.368Z'
+    ```text
+    Status E2E: 400 {
+    message: 'Mohon maaf, stok tidak mencukupi atau sudah habis!',
+    error: 'Bad Request',
+    statusCode: 400
     }
     ✓ test/app.e2e-spec.ts (1 test)
+    ```
 
     * **Success Result:**
+    ```text
     Status E2E: 201 {
     id: '85f592f3-4d0b-4e50-9b50-80e08f1f3a1b',
     userId: '123e4567-e89b-12d3-a456-426614174000',
@@ -92,6 +102,7 @@ http_req_failed..: 88.20% 882 out of 1000
     createdAt: '2026-10-05T04:22:19.368Z'
     }
     ✓ test/app.e2e-spec.ts (1 test)
+    ```
 
 ## Tech Stack
 * Framework: NestJS (Node.js)
