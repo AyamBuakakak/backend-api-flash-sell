@@ -1,8 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Product } from '../product/entities/product.entity.js';
-import { Order, OrderStatus } from './entities/order.entity.js';
-import { OrderItem } from '../order-item/entity/order-item.entity.js';
+import { Order } from './entities/order.entity.js';
+import { OrderItem } from './entities/order-item.entity.js';
 
 @Injectable()
 export class FlashSaleService {
@@ -37,7 +37,7 @@ export class FlashSaleService {
             const order = queryRunner.manager.create(Order, {
                 userId,
                 totalPrice: totalPrice,
-                status: OrderStatus.SUCCESS,
+                status: 'SUCCESS',
                 items: [
                     queryRunner.manager.create(OrderItem, {
                         productId: product.id,
@@ -54,6 +54,7 @@ export class FlashSaleService {
             return savedOrder;
 
         } catch (error) {
+            console.error('ALASAN SERVER CRASH:', error);
             await queryRunner.rollbackTransaction();
             throw error;
         } finally {

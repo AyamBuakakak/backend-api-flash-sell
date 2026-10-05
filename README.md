@@ -3,40 +3,112 @@
 > An optimized backend system designed to handle thousands of concurrent checkout requests with 100% data consistency. Built to solve the classic "Negative Stock" race condition during Flash Sale events.
 
 ## The Architecture & Core Solution
-In a standard CRUD setup, 1,000 users attempting to buy an item with a stock of 5 at the exact same millisecond will result in 100 successful orders and a stock of -95 (Race Condition). 
+In a standard CRUD setup, 50 to 1,000 users attempting to buy an item with a limited stock at the exact same millisecond will result in data anomalies, typically leading to a negative stock balance (Race Condition).
 
-To prevent this without introducing heavy queues like Kafka, this API implements:
+To prevent this without introducing heavy message brokers like Kafka or RabbitMQ, this API implements:
 *   **Pessimistic Locking (`SELECT ... FOR UPDATE`):** Enforced via TypeORM's `queryRunner` to queue concurrent requests at the database engine level (PostgreSQL).
-*   **ACID Transactions:** Ensuring that stock decrement and order creation are treated as a single atomic operation.
-*   **Rate Limiting:** Implemented at the application level to prevent brute-force and DDoS attempts.
+*   **ACID Transactions:** Ensuring that the stock decrement and order creation are treated as a single atomic operation.
+
+> Note: This main branch focuses on measuring the baseline latency and performance when users hit the API directly, without the aid of caching, rate limiters (throttler), or authentication.
 
 ## Benchmark & Stress Testing (K6)
-This system was stress-tested using **K6** with the following parameters:
-*   **Virtual Users (Concurrent):** 1,000 VUs
-*   **Initial Stock:** 5 items
-*   **Test Duration:** 10 seconds
+This system was stress-tested using **Grafana K6** with the following parameters:
+*   **Virtual Users (Concurrent):** 50, 100, 500, and 1000 VUs
+*   **Initial Stock:** Randomly set between 7 to 118 items
+*   **Test Duration:** 10 seconds per scenario
 
-### Results:
-*   [X] **0 Data Anomalies:** The database recorded exactly 5 successful orders. Stock stopped at 0. **No negative stock.**
-*   [X] **Graceful Rejection:** 995 requests were successfully rejected with `400 Bad Request` in under 45ms.
-*   [X] **No Server Crashes:** The Node.js Event Loop remained unblocked during the massive spike.
+### Summary of Results:
+*   [x] **Zero Data Anomalies:** The database recorded exactly 100% successful orders for modest traffic (50 - 100 VUs). The stock stopped exactly at 0. **No negative stock occurred.**
+*   [x] **Graceful Rejection:** Excess requests were successfully rejected with a `400 Bad Request` (Out of Stock) response.
+*   [x] **Breaking Point Analysis:** 
+    * Up to **~250 VUs**, the server handled the queue flawlessly. 
+    * At **500 VUs**, the Node.js server remained active, but the database began experiencing **connection pool exhaustion** (rejecting queries with 500 errors). 
+    * At **1000 VUs**, the server became overloaded and rejected 70% of the traffic (Connection Refused).
 
-*(Tambahkan Screenshot Terminal K6 Anda di sini)*
-*(Tambahkan Screenshot Tabel Database yang menunjukkan Stok = 0 dan hanya 5 Order sukses di sini)*
+### K6 Metric Results:
+
+**50 VUs (Stable):**
+✗ success (Status 201)         ↳  20% — ✓ 10 / ✗ 40
+✗ out of stock (Status 400)    ↳  80% — ✓ 40 / ✗ 10
+
+http_req_duration: avg=385.68ms  p(95)=437.24ms
+http_req_failed..: 80.00% 40 out of 50
+
+**50 VUs (Stable):**
+✗ success (Status 201)         ↳  7% — ✓ 7 / ✗ 93
+✗ out of stock (Status 400)    ↳  93% — ✓ 93 / ✗ 7
+
+http_req_duration: avg=315.67ms  p(95)=382.79ms
+http_req_failed..: 93.00% 93 out of 100
+
+**50 VUs (Stable):**
+✗ success (Status 201)         ↳  3% — ✓ 15 / ✗ 485
+✗ out of stock (Status 400)    ↳  51% — ✓ 259 / ✗ 241
+
+http_req_duration: avg=324.24ms  p(95)=767.9ms 
+http_req_failed..: 97.00% 485 out of 500
+
+**50 VUs (Stable):**
+✗ success (Status 201)         ↳  11% — ✓ 118 / ✗ 882
+✗ out of stock (Status 400)    ↳  18% — ✓ 185 / ✗ 815
+
+http_req_duration: avg=330.65ms  p(95)=1.34s
+http_req_failed..: 88.20% 882 out of 1000
+
+### Testing Result:
+* **Unit Test:**
+✓ src/modules/module-catalog/order/flash-sale.service.spec.ts (5 tests)
+   ✓ FlashSaleService (Vitest)
+     ✓ must be defined
+     ✓ buyProduct
+       ✓ must successfully buy, commit transaction, and release connection
+       ✓ throw BadRequestException and rollback if product was not found
+       ✓ throw BadRequestException and rollback if out of stock
+       ✓ rollback and release connection if internal error occurs in database
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Duration  1.52s
+
+* **e2e Test:**
+    * **Failed Result:**
+    Status E2E: 201 {
+    id: '85f592f3-4d0b-4e50-9b50-80e08f1f3a1b',
+    userId: '123e4567-e89b-12d3-a456-426614174000',
+    totalPrice: 15000000,
+    status: 'SUCCESS',
+    items: [ ... ],
+    createdAt: '2026-10-05T04:22:19.368Z'
+    }
+    ✓ test/app.e2e-spec.ts (1 test)
+
+    * **Success Result:**
+    Status E2E: 201 {
+    id: '85f592f3-4d0b-4e50-9b50-80e08f1f3a1b',
+    userId: '123e4567-e89b-12d3-a456-426614174000',
+    totalPrice: 15000000,
+    status: 'SUCCESS',
+    items: [ ... ],
+    createdAt: '2026-10-05T04:22:19.368Z'
+    }
+    ✓ test/app.e2e-spec.ts (1 test)
 
 ## Tech Stack
-*   **Framework:** NestJS (Node.js)
-*   **Database:** PostgreSQL
-*   **ORM:** TypeORM
-*   **Testing:** K6 (Load Testing)
+* Framework: NestJS (Node.js)
+* Database: PostgreSQL
+* ORM: TypeORM
+* Testing: K6 (Load Testing), Vitest & Supertest (Unit & E2E Testing)
 
 ## How to Run Locally
-1. Clone this repository: `git clone ...`
-2. Start the database using Docker: `docker-compose up -d`
-3. Install dependencies: `npm install`
-4. Run migrations: `npm run typeorm migration:run`
-5. Start the server: `npm run start:dev`
+* Clone this repository: `git clone <your-repo-url>`
+* Start the database using Docker: `docker-compose up -d`
+* Install dependencies: `npm install`
+* Run migrations: `npm run typeorm migration:run`
+* Start the server: `npm run start:dev`
 
 ## Future Improvements
-*   Implement Redis for caching product catalogs to reduce read operations on PostgreSQL.
-*   Separate the read and write database operations (CQRS pattern) for horizontal scaling.
+*   [ ] Implement Rate-Limiting (Throttler) to handle DDoS anomalies and drop excessive requests gracefully.
+*   [ ] Implement Redis Caching for product catalogs to drastically reduce read operations on PostgreSQL.
+*   [ ] Build a custom Authentication System using JWT and HttpOnly Cookies on the frontend.
+*   [ ] Add comprehensive e-commerce features (Order History, Order Cancellation, Product Management, etc.).
+*   [ ] Separate the read and write database operations (CQRS Pattern) for horizontal scaling.

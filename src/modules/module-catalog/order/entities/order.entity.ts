@@ -4,15 +4,12 @@ import {
     Column,
     CreateDateColumn,
     OneToMany,
+    Relation,
 } from 'typeorm';
 
-import { OrderItem } from '../../order-item/entity/order-item.entity.js';
+import { OrderItem } from './order-item.entity.js';
 
-export enum OrderStatus {
-    PENDING = 'PENDING',
-    SUCCESS = 'SUCCESS',
-    FAILED = 'FAILED',
-}
+export type OrderStatus = 'PENDING' | 'SUCCESS' | 'FAILED';
 
 @Entity('orders')
 export class Order {
@@ -25,11 +22,15 @@ export class Order {
     @Column({ name: 'total_price', type: 'decimal', precision: 12, scale: 2 })
     totalPrice: number;
 
-    @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
+    @Column({
+        type: 'enum',
+        enum: ['PENDING', 'SUCCESS', 'FAILED'],
+        default: 'PENDING'
+    })
     status: OrderStatus;
 
     @OneToMany(() => OrderItem, (orderItem) => orderItem.order, { cascade: true })
-    items: OrderItem[];
+    items: Relation<OrderItem>[];
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

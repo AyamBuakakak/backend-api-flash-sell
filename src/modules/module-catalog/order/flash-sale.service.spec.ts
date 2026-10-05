@@ -5,7 +5,7 @@ import { BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { FlashSaleService } from './flash-sale.service.js';
 import { Product } from '../product/entities/product.entity.js';
-import { Order, OrderStatus } from './entities/order.entity.js';
+import { Order } from './entities/order.entity.js';
 
 describe('FlashSaleService (Vitest)', () => {
     let service: FlashSaleService;
@@ -45,7 +45,7 @@ describe('FlashSaleService (Vitest)', () => {
         vi.clearAllMocks();
     });
 
-    it('harus terdefinisi', () => {
+    it('must be defined', () => {
         expect(service).toBeDefined();
     });
 
@@ -64,11 +64,11 @@ describe('FlashSaleService (Vitest)', () => {
             id: 'order-uuid-789',
             userId,
             totalPrice: 10000000,
-            status: OrderStatus.SUCCESS,
+            status: "SUCCESS",
             items: [],
         } as unknown as Order;
 
-        it('harus berhasil membeli produk, commit transaksi, dan release koneksi', async () => {
+        it('must be succes to buy, commit transaction, and release connection', async () => {
             mockQueryRunner.manager.findOne.mockResolvedValue({ ...mockProduct });
             mockQueryRunner.manager.create.mockImplementation((_entity, dto) => dto);
             mockQueryRunner.manager.save.mockImplementation(async (entity) => {
@@ -102,7 +102,7 @@ describe('FlashSaleService (Vitest)', () => {
             expect(result).toEqual(mockOrder);
         });
 
-        it('harus throw BadRequestException dan rollback jika produk tidak ditemukan', async () => {
+        it('throw BadRequestException and rollback if product was not founded', async () => {
             mockQueryRunner.manager.findOne.mockResolvedValue(null);
 
             await expect(service.buyProduct(productId, userId, 1)).rejects.toThrow(
@@ -114,7 +114,7 @@ describe('FlashSaleService (Vitest)', () => {
             expect(mockQueryRunner.release).toHaveBeenCalledTimes(1);
         });
 
-        it('harus throw BadRequestException dan rollback jika stok tidak mencukupi', async () => {
+        it('throw BadRequestException and rollback if out of stock', async () => {
             const lowStockProduct = { ...mockProduct, stock: 1 };
             mockQueryRunner.manager.findOne.mockResolvedValue(lowStockProduct);
 
@@ -127,7 +127,7 @@ describe('FlashSaleService (Vitest)', () => {
             expect(mockQueryRunner.release).toHaveBeenCalledTimes(1);
         });
 
-        it('harus rollback dan release koneksi jika terjadi error database tak terduga', async () => {
+        it('rollback dan release connection if internal error in database', async () => {
             mockQueryRunner.manager.findOne.mockResolvedValue({ ...mockProduct });
             mockQueryRunner.manager.save.mockRejectedValue(
                 new Error('Database disk error'),
