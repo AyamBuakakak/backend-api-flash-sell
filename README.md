@@ -61,7 +61,7 @@ This system was stress-tested using **Grafana K6** with the following parameters
     * At the massive VUs with **~49.000** in 15 seconds, the server successfully resistance when get hit by **7.500 VUs** per seconds by 100 VUs with different IP, the database safely processing few request (75 VUs) the stock stopped exactly at 0, and the rest of request get rejecting by **Throttler**. The reason why the rest of limit on long layer (125) get rejected, because in the first seconds when 7.500 VUs hits the short layer just let in the first 5 request per IP following the system of **throttler** so in total of 100 VUs times 5 limit in short layer is become 75 and long layer is never running because the short layer is rejeceting the rest of VUs.
 
 ### K6 Metric Results:
-**220 VUs with the same IP (Stable):**
+* **220 VUs with the same IP (Stable):**
     * **Short Layer:**
     ```text
     ✗ Allowed (201/400)
@@ -75,7 +75,7 @@ This system was stress-tested using **Grafana K6** with the following parameters
         http_req_failed................: 97.72% 215 out of 220
         http_reqs......................: 220    303.216535/s
     ```
-    
+        
     * **Long Layer:**
     ```text
     ✓ Allowed (201/400)
