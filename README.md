@@ -104,6 +104,10 @@ http_req_failed..: 88.20% 882 out of 1000
     ✓ test/app.e2e-spec.ts (1 test)
     ```
 
+## Database Schema
+<img width="385" height="395" alt="Screenshot 2026-10-07 052443" src="https://github.com/user-attachments/assets/068f430d-efb8-4eef-bea4-e77c73dc0198" />
+
+
 ## Tech Stack
 * Framework: NestJS (Node.js)
 * Database: PostgreSQL
