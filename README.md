@@ -89,7 +89,7 @@ This system was stress-tested using **Grafana K6** with the following parameters
         http_reqs......................: 220 3.253161/s
     ```
 
-**~49.000 VUs (Stable):**
+* **~49.000 VUs (Stable):**
 ```text
 ✓ Server Resistance (Not 5xx)
     ✗ Success Orders (201)
