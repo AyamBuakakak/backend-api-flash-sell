@@ -108,6 +108,7 @@ This system was stress-tested using **Grafana K6** with the following parameters
 
 ### Testing Result:
 * **Unit Test:**
+```text
 ✓ src/modules/module-catalog/order/flash-sale.service.spec.ts (5 tests)
    ✓ FlashSaleService (Vitest)
      ✓ must be defined
@@ -120,9 +121,11 @@ This system was stress-tested using **Grafana K6** with the following parameters
  Test Files  1 passed (1)
       Tests  5 passed (5)
    Duration  1.52s
+```
 
 * **e2e Test:**
     * **Failed Result:**
+    ```text
     Status E2E: 201 {
     id: '85f592f3-4d0b-4e50-9b50-80e08f1f3a1b',
     userId: '123e4567-e89b-12d3-a456-426614174000',
@@ -132,8 +135,10 @@ This system was stress-tested using **Grafana K6** with the following parameters
     createdAt: '2026-10-05T04:22:19.368Z'
     }
     ✓ test/app.e2e-spec.ts (1 test)
+    ```
 
     * **Success Result:**
+    ```text
     Status E2E: 201 {
     id: '85f592f3-4d0b-4e50-9b50-80e08f1f3a1b',
     userId: '123e4567-e89b-12d3-a456-426614174000',
@@ -143,6 +148,7 @@ This system was stress-tested using **Grafana K6** with the following parameters
     createdAt: '2026-10-05T04:22:19.368Z'
     }
     ✓ test/app.e2e-spec.ts (1 test)
+    ```
 
 ## Tech Stack
 * Framework: NestJS (Node.js)
