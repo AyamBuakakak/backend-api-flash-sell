@@ -9,51 +9,102 @@ To prevent this without introducing heavy message brokers like Kafka or RabbitMQ
 *   **Pessimistic Locking (`SELECT ... FOR UPDATE`):** Enforced via TypeORM's `queryRunner` to queue concurrent requests at the database engine level (PostgreSQL).
 *   **ACID Transactions:** Ensuring that the stock decrement and order creation are treated as a single atomic operation.
 
-> Note: This main branch focuses on measuring the baseline latency and performance when users hit the API directly, without the aid of caching, rate limiters (throttler), or authentication.
+> Note: This Throttler branch focuses on measuring the baseline latency and performance when users hit the API, with rate limiters (throttler) by nest.js without reddis caching storage, or authentication.
+
+## Throttler Configutarion
+Configure the Nest Throttler with two layers for a seconds and a minute for available request to hits, whit the minimum up to 5 request per seconds and maximum 200 per minute to prevent the DDos attacks, without reddis caching storage and auhtentication system.
+
+### Configuration Code:
+* **Throttler Moduler:**
+```text
+import { ThrottlerModule } from "@nestjs/throttler";
+
+export const throttlerModule = ThrottlerModule.forRoot([{
+    name: 'short',
+    ttl: 1000,
+    limit: 5,
+}, {
+    name: 'long',
+    ttl: 60000,
+    limit: 200,
+}
+]);
+```
+
+* **Throttler Guard:**
+```text
+import { Provider } from "@nestjs/common";
+import { APP_GUARD } from "@nestjs/core";
+import { ThrottlerGuard } from "@nestjs/throttler";
+
+export const throttlerGuard: Provider<ThrottlerGuard> = {
+    provide: APP_GUARD,
+    useClass: ThrottlerGuard,
+}
+```
+
 
 ## Benchmark & Stress Testing (K6)
 This system was stress-tested using **Grafana K6** with the following parameters:
-*   **Virtual Users (Concurrent):** 50, 100, 500, and 1000 VUs
-*   **Initial Stock:** Randomly set between 7 to 118 items
-*   **Test Duration:** 10 seconds per scenario
+*   **Virtual Users (Concurrent):** 220, and as much is possible in 15 secconds by 100 with different IP (~49.000) VUs.
+*   **Test Duration:** 10, 15, and 120 seconds for different scenario.
 
 ### Summary of Results:
-*   [x] **Zero Data Anomalies:** The database recorded exactly 100% successful orders for modest traffic (50 - 100 VUs). The stock stopped exactly at 0. **No negative stock occurred.**
-*   [x] **Graceful Rejection:** Excess requests were successfully rejected with a `400 Bad Request` (Out of Stock) response.
+*   [x] **Zero Data Anomalies:** The database recorded exactly 100% successful orders handled by throttler for modest traffic (~220 VUs) and massive traffic (7.500 VUs) per seconds. The stock stopped exactly at 0. **No negative stock occurred.**
+*   [x] **Graceful Rejection:** Excess requests were successfully rejected with a `429 Too Many Request` by throttler and `400 Bad Request` (Out of Stock) response.
 *   [x] **Breaking Point Analysis:** 
-    * Up to **~250 VUs**, the server handled the queue flawlessly. 
-    * At **500 VUs**, the Node.js server remained active, but the database began experiencing **connection pool exhaustion** (rejecting queries with 500 errors). 
-    * At **1000 VUs**, the server became overloaded and rejected 70% of the traffic (Connection Refused).
+    * At **~220 VUs**, the server handled the queue flawlessly, with **Throttler** configuration in short and long layer is really working in this scenario: 
+        * **Short Layer:** When requests with the same IP wants to hit API at exact same seconds, short layer let 5 request by limit configuration to be processed and the rest of request has rejected by **Throttler** (rejecting request with 429 errors).
+        
+        * **Long Layer:** When 220 requests with the same IP wants to hit API with 300 miliseconds pause (~3 request per seconds) in total 120 seconds, short layer passed the request and the request never reach the limit of the long layer (rejecting request with 400 errors).
+    
+    * At the massive VUs with **~49.000** in 15 seconds, the server successfully resistance when get hit by **7.500 VUs** per seconds by 100 VUs with different IP, the database safely processing few request (75 VUs) the stock stopped exactly at 0, and the rest of request get rejecting by **Throttler**. The reason why the rest of limit on long layer (125) get rejected, because in the first seconds when 7.500 VUs hits the short layer just let in the first 5 request per IP following the system of **throttler** so in total of 100 VUs times 5 limit in short layer is become 75 and long layer is never running because the short layer is rejeceting the rest of VUs.
 
 ### K6 Metric Results:
+**220 VUs with the same IP (Stable):**
+    * **Short Layer:**
+    ```text
+    ✗ Allowed (201/400)
+        ↳  2% — ✓ 5 / ✗ 215
+        ✗ Blocked Exactly (429)
+        ↳  97% — ✓ 215 / ✗ 5
 
-**50 VUs (Stable):**
-✗ success (Status 201)         ↳  20% — ✓ 10 / ✗ 40
-✗ out of stock (Status 400)    ↳  80% — ✓ 40 / ✗ 10
+        HTTP
+        http_req_duration..............: avg=3.2ms   min=0s      med=654.5µs  max=507.07ms p(90)=1.1ms    p(95)=1.25ms  
+        { expected_response:true }...: avg=110.5ms min=10.17ms med=12.04ms  max=507.07ms p(90)=309.44ms p(95)=408.26ms
+        http_req_failed................: 97.72% 215 out of 220
+        http_reqs......................: 220    303.216535/s
+    ```
+    
+    * **Long Layer:**
+    ```text
+    ✓ Allowed (201/400)
+    ✗ Blocked Exactly (429) 
+    ↳ 0% — ✓ 0 / ✗ 220
 
-http_req_duration: avg=385.68ms  p(95)=437.24ms
-http_req_failed..: 80.00% 40 out of 50
+        HTTP 
+        http_req_duration..............: avg=5.79ms min=2.9ms med=4.57ms max=81.88ms p(90)=7.12ms p(95)=14.39ms
+        { expected_response:true }...: avg=19.1ms min=13.35ms med=14.39ms max=81.88ms p(90)=16.74ms p(95)=36.45ms
+        http_req_failed................: 93.18% 205 out of 220
+        http_reqs......................: 220 3.253161/s
+    ```
 
-**50 VUs (Stable):**
-✗ success (Status 201)         ↳  7% — ✓ 7 / ✗ 93
-✗ out of stock (Status 400)    ↳  93% — ✓ 93 / ✗ 7
+**~49.000 VUs (Stable):**
+```text
+✓ Server Resistance (Not 5xx)
+    ✗ Success Orders (201)
+      ↳  0% — ✓ 18 / ✗ 49656
+    ✗ Out of Stock (400)
+      ↳  0% — ✓ 57 / ✗ 49617
+    ✗ Blocked by Throttler (429)
+      ↳  99% — ✓ 49599 / ✗ 75
 
-http_req_duration: avg=315.67ms  p(95)=382.79ms
-http_req_failed..: 93.00% 93 out of 100
-
-**50 VUs (Stable):**
-✗ success (Status 201)         ↳  3% — ✓ 15 / ✗ 485
-✗ out of stock (Status 400)    ↳  51% — ✓ 259 / ✗ 241
-
-http_req_duration: avg=324.24ms  p(95)=767.9ms 
-http_req_failed..: 97.00% 485 out of 500
-
-**50 VUs (Stable):**
-✗ success (Status 201)         ↳  11% — ✓ 118 / ✗ 882
-✗ out of stock (Status 400)    ↳  18% — ✓ 185 / ✗ 815
-
-http_req_duration: avg=330.65ms  p(95)=1.34s
-http_req_failed..: 88.20% 882 out of 1000
+    HTTP
+    http_req_duration..............: avg=30.06ms  min=573.79µs med=28.37ms  max=1.52s p(90)=33.41ms p(95)=36.24ms
+      { expected_response:true }...: avg=917.09ms min=311.18ms med=922.67ms max=1.52s p(90)=1.35s   p(95)=1.38s  
+    http_req_failed................: 99.96% 49656 out of 49674
+    http_reqs......................: 49674  3305.76935/s
+```
 
 ### Testing Result:
 * **Unit Test:**
@@ -107,7 +158,7 @@ http_req_failed..: 88.20% 882 out of 1000
 * Start the server: `npm run start:dev`
 
 ## Future Improvements
-*   [ ] Implement Rate-Limiting (Throttler) to handle DDoS anomalies and drop excessive requests gracefully.
+*   [x] Implement Rate-Limiting (Throttler) to handle DDoS anomalies and drop excessive requests gracefully.
 *   [ ] Implement Redis Caching for product catalogs to drastically reduce read operations on PostgreSQL.
 *   [ ] Build a custom Authentication System using JWT and HttpOnly Cookies on the frontend.
 *   [ ] Add comprehensive e-commerce features (Order History, Order Cancellation, Product Management, etc.).
