@@ -84,7 +84,7 @@ http_req_failed..: 88.20% 882 out of 1000
     * **Failed Result:**
     ```text
     Status E2E: 400 {
-    message: 'Mohon maaf, stok tidak mencukupi atau sudah habis!',
+    message: 'out of stock!',
     error: 'Bad Request',
     statusCode: 400
     }
