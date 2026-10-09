@@ -106,7 +106,7 @@ describe('FlashSaleService (Vitest)', () => {
             mockQueryRunner.manager.findOne.mockResolvedValue(null);
 
             await expect(service.buyProduct(productId, userId, 1)).rejects.toThrow(
-                new BadRequestException('Produk tidak ditemukan'),
+                new BadRequestException('product not found'),
             );
 
             expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalledTimes(1);
@@ -119,7 +119,7 @@ describe('FlashSaleService (Vitest)', () => {
             mockQueryRunner.manager.findOne.mockResolvedValue(lowStockProduct);
 
             await expect(service.buyProduct(productId, userId, 5)).rejects.toThrow(
-                new BadRequestException('Mohon maaf, stok tidak mencukupi atau sudah habis!'),
+                new BadRequestException('out of stock!'),
             );
 
             expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalledTimes(1);

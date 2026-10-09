@@ -24,6 +24,7 @@
     "migration:run": "npx tsx ./node_modules/typeorm/cli.js migration:run -d ./typeorm.config.cts"
   },
   "dependencies": {
+    "@nestjs/cache-manager": "^12.0.1",
     "@nestjs/common": "^12.0.1",
     "@nestjs/config": "^12.0.1",
     "@nestjs/core": "^12.0.1",
@@ -31,9 +32,12 @@
     "@nestjs/platform-express": "^12.0.1",
     "@nestjs/throttler": "^6.7.1",
     "@nestjs/typeorm": "^12.0.2",
+    "cache-manager": "^7.2.9",
+    "cache-manager-redis-yet": "^5.1.5",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "dotenv": "^18.0.5",
+    "ioredis": "^5.11.1",
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",

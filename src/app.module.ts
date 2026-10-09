@@ -9,12 +9,15 @@ import { typeOrmModule } from './config/typeorm/typeorm.config.js';
 import { validationPipe } from './config/pipe/pipe.config.js';
 import { throttlerGuard } from './config/throttler/throttler-guard.config.js';
 import { throttlerModule } from './config/throttler/throttler.config.js';
+import { transformAndCacheInterceptor } from './config/interceptor/interceptor.config.js';
+import { cacheModule } from './config/cache/cache.config.js';
 
 @Module({
   imports: [
     configModule,
     typeOrmModule,
     throttlerModule,
+    cacheModule,
     ProductModule,
     OrderModule,
   ],
@@ -23,6 +26,7 @@ import { throttlerModule } from './config/throttler/throttler.config.js';
     AppService,
     throttlerGuard,
     validationPipe,
+    transformAndCacheInterceptor,
   ],
 })
 export class AppModule { }
