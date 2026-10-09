@@ -45,7 +45,7 @@ http_req_duration: avg=315.67ms  p(95)=382.79ms
 http_req_failed..: 93.00% 93 out of 100
 ```
 
-**500 VUs (Stable):**
+**500 VUs (unstable):**
 ```text
 ✗ success (Status 201)         ↳  3% — ✓ 15 / ✗ 485
 ✗ out of stock (Status 400)    ↳  51% — ✓ 259 / ✗ 241
@@ -54,7 +54,7 @@ http_req_duration: avg=324.24ms  p(95)=767.9ms
 http_req_failed..: 97.00% 485 out of 500
 ```
 
-**1000 VUs (Stable):**
+**1000 VUs (down):**
 ```text
 ✗ success (Status 201)         ↳  11% — ✓ 118 / ✗ 882
 ✗ out of stock (Status 400)    ↳  18% — ✓ 185 / ✗ 815
@@ -103,6 +103,10 @@ http_req_failed..: 88.20% 882 out of 1000
     }
     ✓ test/app.e2e-spec.ts (1 test)
     ```
+
+## Database Schema
+<img width="385" height="395" alt="Screenshot 2026-10-07 052443" src="https://github.com/user-attachments/assets/068f430d-efb8-4eef-bea4-e77c73dc0198" />
+
 
 ## Tech Stack
 * Framework: NestJS (Node.js)
