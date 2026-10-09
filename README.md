@@ -126,13 +126,10 @@ This system was stress-tested using **Grafana K6** with the following parameters
 * **e2e Test:**
     * **Failed Result:**
     ```text
-    Status E2E: 201 {
-    id: '85f592f3-4d0b-4e50-9b50-80e08f1f3a1b',
-    userId: '123e4567-e89b-12d3-a456-426614174000',
-    totalPrice: 15000000,
-    status: 'SUCCESS',
-    items: [ ... ],
-    createdAt: '2026-10-05T04:22:19.368Z'
+    Status E2E: 400 {
+    message: 'out of stock!',
+    error: 'Bad Request',
+    statusCode: 400
     }
     ✓ test/app.e2e-spec.ts (1 test)
     ```
