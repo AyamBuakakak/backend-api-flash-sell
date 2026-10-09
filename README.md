@@ -153,6 +153,10 @@ This system was stress-tested using **Grafana K6** with the following parameters
 * ORM: TypeORM
 * Testing: K6 (Load Testing), Vitest & Supertest (Unit & E2E Testing)
 
+## Database Schema
+<img width="466" height="531" alt="ERD PostgreSQL" src="https://github.com/user-attachments/assets/7b34fa76-61a1-403d-bb00-23ae623f3d20" />
+
+
 ## How to Run Locally
 * Clone this repository: `git clone <your-repo-url>`
 * Start the database using Docker: `docker-compose up -d`
